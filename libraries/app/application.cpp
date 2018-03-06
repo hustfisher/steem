@@ -87,6 +87,15 @@ namespace detail {
       bool _is_block_producer = false;
       bool _force_validate = false;
 
+      /**
+       * 1 如果有p2p配置，重新家在；
+       * 2 如果配置中有seed-node，需要连接到所有seed-node;
+       * 3 如果设置了p2p-endpoint，则本地p2p网络监听该地址，否则监听0端口。
+       * 4 list to p2p network;
+       * 5 connect to p2p network;
+       * 6 从_chain_db读到head_block_id，并计入ilog；
+       * 7 向p2p网络发送block_message，从head_block_id位置开始同步数据；
+       */
       void reset_p2p_node(const fc::path& data_dir)
       { try {
          _p2p_network = std::make_shared<graphene::net::node>("Graphene Reference Implementation");
@@ -175,6 +184,12 @@ namespace detail {
          FC_CAPTURE_AND_RETHROW((endpoint_string))
       }
 
+      /**
+       * 1 如果没有定义rpc-endpoint 则返回;
+       * 2 否则，分配并初始化一个websocket_server实例；
+       * 3 设置其 on_connection的回调函数，回调函数作用：有新连接时，构建session，注册所有public_api，并将session设入connection；
+       * 4 websocket_server 监听rpc-endpoint的设置地址，并开始准备accept；
+       */
       void reset_websocket_server()
       { try {
          if( !_options->count("rpc-endpoint") )
@@ -191,7 +206,11 @@ namespace detail {
          _websocket_server->start_accept();
       } FC_CAPTURE_AND_RETHROW() }
 
-
+      /**
+       * 如果没有设置rpc-tls-endpoint 和 server-pem则返回，否则：
+       *    1 构建websocket tls server，设置on_connection回调函数；
+       *    2 tsl server进行listen + acctpt；
+       */
       void reset_websocket_tls_server()
       { try {
          if( !_options->count("rpc-tls-endpoint") )
@@ -214,6 +233,12 @@ namespace detail {
          _websocket_tls_server->start_accept();
       } FC_CAPTURE_AND_RETHROW() }
 
+      /**
+       * 当有新连接时：
+       * 1 首先创建一个session，并将该session的wsc设为该connection；
+       * 2 轮询所有的_public_apis，将session中api的name与api_ptr对应，并调用api的register_api函数；
+       * 3 将session设入connection中；
+       */
       void on_connection( const fc::http::websocket_connection_ptr& c )
       {
          std::shared_ptr< api_session_data > session = std::make_shared<api_session_data>();
@@ -251,6 +276,13 @@ namespace detail {
          _self->register_api_factory< network_broadcast_api >( "network_broadcast_api" );
       }
 
+      /**
+       * 1 根据配置设置，初始化_chain_db，并open;
+       * 2 轮询配置中的public_api,加入到 _public_apis中;
+       * 3 根据p2p配置，监听p2p本地端口，加入p2p网络，并根据chain_db进行head记录进行数据同步；
+       * 4 构建websocket_server，设置回调函数，listen + start_accept;
+       * 5 构建websocket_tls_server，设置回调函数，listen + start_accept;
+       */
       void startup()
       { try {
          if( _options->at("backtrace").as<string>() == "yes" )
@@ -392,6 +424,7 @@ namespace detail {
             reset_p2p_node(_data_dir);
          }
 
+         // 构建websocket_server和websocket_tls_server，分别设置on_connection回调函数，并开始listen + accept；
          reset_websocket_server();
          reset_websocket_tls_server();
       } FC_LOG_AND_RETHROW() }
@@ -419,6 +452,9 @@ namespace detail {
          _api_factories_by_name[name] = factory;
       }
 
+      /**
+       * 从_api_factories_by_name中找到,ctx中api_name对应之前注册进来的对应api_ptr
+       */
       fc::api_ptr create_api_by_name( const api_context& ctx )
       {
          auto it = _api_factories_by_name.find(ctx.api_name);
@@ -959,6 +995,11 @@ application::~application()
    }*/
 }
 
+/**
+ * 这只app的默认cmd_line_options & cfg_file_options;
+ * 注意默认的public api： database_api login_api account_by_key_api
+ * 默认的plugins：witness account_history account_by_key
+ */
 void application::set_program_options(boost::program_options::options_description& command_line_options,
                                       boost::program_options::options_description& configuration_file_options) const
 {
@@ -974,6 +1015,11 @@ void application::set_program_options(boost::program_options::options_descriptio
    default_plugins.push_back( "account_by_key" );
    std::string str_default_plugins = boost::algorithm::join( default_plugins, " " );
 
+   /**
+    * add_options() 返回 options_description_easy_init，然后循环调用下列方法：
+    * operator()(const char* name, const value_semantic* s, const char* description);
+    * 默认参数设置：除了加入default apis和plugins外，还会设置默认的rpc-endpoint和rpc-tls-endpoint到8090和8089端口;
+    */
    configuration_file_options.add_options()
          ("p2p-endpoint", bpo::value<string>(), "Endpoint for P2P node to listen on")
          ("p2p-max-connections", bpo::value<uint32_t>(), "Maxmimum number of incoming connections on P2P endpoint")
@@ -1012,6 +1058,13 @@ void application::initialize(const fc::path& data_dir, const boost::program_opti
    my->_options = &options;
 }
 
+/**
+* 1 根据配置设置，初始化_chain_db，并open;
+* 2 轮询配置中的public_api,加入到 _public_apis中;
+* 3 根据p2p配置，监听p2p本地端口，加入p2p网络，并根据chain_db进行head记录进行数据同步；
+* 4 构建websocket_server，设置回调函数，listen + start_accept;
+* 5 构建websocket_tls_server，设置回调函数，listen + start_accept;
+*/
 void application::startup()
 {
    try {
@@ -1116,6 +1169,9 @@ void application::register_abstract_plugin( std::shared_ptr< abstract_plugin > p
    my->_plugins_available[plug->plugin_name()] = plug;
 }
 
+/**
+ * 如果plugsin_available中有name，则增加到_plugins_enabled中
+ */
 void application::enable_plugin( const std::string& name )
 {
    auto it = my->_plugins_available.find(name);
@@ -1127,6 +1183,9 @@ void application::enable_plugin( const std::string& name )
    my->_plugins_enabled[name] = it->second;
 }
 
+/**
+ * 轮询配置中所有enable-plugin中的plugins，如果available，则加入到_plugin_enabled中，并调用该plugin的plugin_initialize函数。
+ */
 void application::initialize_plugins( const boost::program_options::variables_map& options )
 {
    if( options.count("enable-plugin") > 0 )
@@ -1151,6 +1210,9 @@ void application::initialize_plugins( const boost::program_options::variables_ma
    return;
 }
 
+/**
+ * 对plugins_enabled中的plugins进行plugin_startup调用
+ */
 void application::startup_plugins()
 {
    for( auto& entry : my->_plugins_enabled )

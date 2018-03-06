@@ -59,6 +59,8 @@ class abstract_plugin
        * This method is called BEFORE the database is open, therefore any routines which require any chain state MUST
        * NOT be called by this method. These routines should be performed in startup() instead.
        *
+       * 注意：不能包含任何chain state相关的操作。
+       *
        * @param options The options passed to the application, via configuration files or command line
        */
       virtual void plugin_initialize( const boost::program_options::variables_map& options ) = 0;

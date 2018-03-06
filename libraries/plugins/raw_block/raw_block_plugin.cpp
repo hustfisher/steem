@@ -30,4 +30,5 @@ void raw_block_plugin::plugin_shutdown()
 
 } } } // steemit::plugin::raw_block
 
+/* 预编译替换后最终为：create_raw_block_plugin( app::application* app ) {std::make_shared< raw_block_plugin >( app );} */
 STEEMIT_DEFINE_PLUGIN( raw_block, steemit::plugin::raw_block::raw_block_plugin )

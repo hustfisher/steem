@@ -684,6 +684,9 @@ void database::_push_transaction( const signed_transaction& trx )
    notify_on_pending_transaction( trx );
 }
 
+/**
+ * 构建block，如果成功则落盘，最后恢复skip_flags
+ */
 signed_block database::generate_block(
    fc::time_point_sec when,
    const account_name_type& witness_owner,
@@ -703,7 +706,12 @@ signed_block database::generate_block(
    return result;
 }
 
-
+/**
+ * 1 根据_pending_tx构建block，构建前后回调用相关trasaction的回调函数；
+ * 2 判断是否hardfork，如果已经hardfork进行相关处理；
+ * 3 签名；
+ * 4 将block落盘；
+ */
 signed_block database::_generate_block(
    fc::time_point_sec when,
    const account_name_type& witness_owner,

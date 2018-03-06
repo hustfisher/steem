@@ -5,6 +5,8 @@
 
 #include <boost/multi_index/hashed_index.hpp>
 
+#include <chainbase/chainbase.hpp>
+
 namespace steemit { namespace chain {
 
    using steemit::protocol::signed_transaction;

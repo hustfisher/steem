@@ -244,11 +244,19 @@ void account_by_key_plugin_impl::post_operation( const operation_notification& n
 account_by_key_plugin::account_by_key_plugin( steemit::app::application* app )
    : plugin( app ), my( new detail::account_by_key_plugin_impl( *this ) ) {}
 
+/**
+ * 无plugin个性化option
+ */
 void account_by_key_plugin::plugin_set_program_options(
    boost::program_options::options_description& cli,
    boost::program_options::options_description& cfg
    ) {}
 
+/**
+ * plugin initialize:
+ * 1 设置在apply operation的前后回调函数;
+ * 2 db 增加key_lookup_index；
+ */
 void account_by_key_plugin::plugin_initialize( const boost::program_options::variables_map& options )
 {
    try
@@ -264,6 +272,14 @@ void account_by_key_plugin::plugin_initialize( const boost::program_options::var
    FC_CAPTURE_AND_RETHROW()
 }
 
+/**
+ * plugin startup：
+ * 1 根据api name & Type 注册一个api；
+ * 2 注册api，是一个模版函数，其从type (即typename Api）来注册一个API factory的一个便利方法:
+ * 	1) 使用 Api(ctx)来 make_shared 构建shared_ptr;
+ * 	2) 调用api->on_api_startup;
+ * 	3) 使用fc::api<Api>(api) 来 make_shared 构建真正的api；
+ */
 void account_by_key_plugin::plugin_startup()
 {
    app().register_api_factory< account_by_key_api >( "account_by_key_api" );

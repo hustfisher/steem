@@ -97,6 +97,10 @@ namespace steemit { namespace app {
 
          /**
           * Convenience method to build an API factory from a type which only requires a reference to the application.
+          * 从type (即typename Api）来注册一个API factory的一个便利方法:
+          * 1 使用 Api(ctx)来 make_shared 构建shared_ptr;
+          * 2 调用api->on_api_startup;
+          * 3 使用fc::api<Api>(api) 来 make_shared 构建真正的api；
           */
          template< typename Api >
          void register_api_factory( const string& name )

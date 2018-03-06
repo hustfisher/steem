@@ -49,7 +49,7 @@
 #define STEEMIT_SYMBOL                          "STEEM"
 #define STEEMIT_ADDRESS_PREFIX                  "STM"
 
-#define STEEMIT_GENESIS_TIME                    (fc::time_point_sec(1458835200))
+#define STEEMIT_GENESIS_TIME                    (fc::time_point_sec(1458835200))   // date -d @xx 算出来是：2016.3.25
 #define STEEMIT_MINING_TIME                     (fc::time_point_sec(1458838800))
 #define STEEMIT_CASHOUT_WINDOW_SECONDS_PRE_HF12 (60*60*24)    /// 1 day
 #define STEEMIT_CASHOUT_WINDOW_SECONDS_PRE_HF17 (60*60*12)    /// 12 hours

@@ -23,6 +23,7 @@ namespace steemit { namespace protocol {
        std::string prefix( STEEMIT_ADDRESS_PREFIX );
 
        const size_t prefix_len = prefix.size();
+       wlog("++++ base58str: ${b58}, prefix: ${prefix}", ("b58", base58str)("prefix", prefix));
        FC_ASSERT( base58str.size() > prefix_len );
        FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );

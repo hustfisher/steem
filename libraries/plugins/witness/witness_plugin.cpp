@@ -244,6 +244,12 @@ namespace detail
       }
    };
 
+   /**
+    * This signla is emitted any time a new transaction is about to be applied to the chain state.在trasaction之前：
+    * 1 获取authorities；
+    * 2 根据trx_size更新account的forum带宽；
+    * 3 根据trx的operations，如果是market operation，同时更新mark 带宽；
+    */
    void witness_plugin_impl::pre_transaction( const signed_transaction& trx )
    {
       const auto& _db = _self.database();
@@ -354,6 +360,9 @@ namespace detail
       }
    }
 
+   /**
+    * 从db中找到对应type的band，更新，然后插入到db；
+    */
    void witness_plugin_impl::update_account_bandwidth( const account_object& a, uint32_t trx_size, const bandwidth_type type )
    {
       database& _db = _self.database();
@@ -431,6 +440,9 @@ witness_plugin::~witness_plugin()
    }
 }
 
+/**
+ * 设置cmd cfg options
+ */
 void witness_plugin::plugin_set_program_options(
    boost::program_options::options_description& command_line_options,
    boost::program_options::options_description& config_file_options)
@@ -455,13 +467,22 @@ using std::vector;
 using std::pair;
 using std::string;
 
+/**
+ * plugin initialize的操作：（before db open）
+ * 1 从options中抽取所需要的配置存入witness_plugins的成员中；
+ * 2 设置当提供新的trasaction、operation时的action，以及提供block后的action；
+ * 3 增加三种索引：account_bandwidth_index， content_edit_lock_index，reserve_ration_index
+ * TODO：具体调用处需要进一步跟踪。
+ */
 void witness_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 { try {
    _options = &options;
+   /* 将options中的witness对应的value转换为vector<std::string>，然后依次转存到_witnesses */
    LOAD_VALUE_SET(options, "witness", _witnesses, string)
 
    if( options.count("private-key") )
    {
+	  /* 构建public_key-private_key，并存入_private_keys map中 */
       const std::vector<std::string> keys = options["private-key"].as<std::vector<std::string>>();
       for (const std::string& wif_key : keys )
       {
@@ -471,8 +492,9 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
       }
    }
 
-   chain::database& db = database();
+   chain::database& db = database();  //拿到 *app().chain_database()
 
+   // transaction的具体调用位置在：database.cpp 构建block块时, notify_on_pre_apply_transaction
    db.on_pre_apply_transaction.connect( [&]( const signed_transaction& tx ){ _my->pre_transaction( tx ); } );
    db.pre_apply_operation.connect( [&]( const operation_notification& note ){ _my->pre_operation( note ); } );
    db.applied_block.connect( [&]( const signed_block& b ){ _my->on_block( b ); } );
@@ -482,6 +504,12 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
    add_plugin_index< reserve_ratio_index     >( db );
 } FC_LOG_AND_RETHROW() }
 
+/**
+ * plugin startup:
+ * 1 设置本节点的_is_block_producer为true；
+ * 2 必要时打印chain banner；
+ * 3 开始规划持续produce block的任务；
+ */
 void witness_plugin::plugin_startup()
 { try {
    ilog("witness plugin:  plugin_startup() begin");
@@ -512,6 +540,10 @@ void witness_plugin::plugin_shutdown()
    return;
 }
 
+/**
+ * 1 设置到下一秒的block production任务计划,如果剩余时间不足50ms，则再推迟1s;
+ * 2 如果成功出block，则继续规划下一次的block production任务；
+ **/
 void witness_plugin::schedule_production_loop()
 {
    //Schedule for the next second's tick regardless of chain state
@@ -528,6 +560,10 @@ void witness_plugin::schedule_production_loop()
                                          next_wakeup, "Witness Block Production");
 }
 
+/**
+ * 1 尝试出block，成功后落盘；
+ * 2 然后进行规划下一次尝试；
+ */
 block_production_condition::block_production_condition_enum witness_plugin::block_production_loop()
 {
    if( fc::time_point::now() < fc::time_point(STEEMIT_GENESIS_TIME) )
@@ -597,6 +633,15 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
    return result;
 }
 
+/**
+ * 尝试创建block：
+ * 1 如果_production_enable还为false，先判断slot time，如果已经到时间设为true，并继续，否则返回not_synced；
+ * 2 如果已有其他已经开始produce 或者 在下一秒计划produce，如果是返回 not_time_yet；
+ * 3 如果还没轮到本节点produce，返回 not_my_turn；
+ * 4 。。。其他各种检测；
+ * 5 最后通过重重验证，通过db.generate_block来生存block；
+ * 6 通过p2p 网络进行广播该block: p2p_node().broadcast(graphene::net::block_message(block))
+ */
 block_production_condition::block_production_condition_enum witness_plugin::maybe_produce_block( fc::mutable_variant_object& capture )
 {
    chain::database& db = database();

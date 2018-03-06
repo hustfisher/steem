@@ -41,6 +41,7 @@ void write_default_logging_config_to_stream(std::ostream& out);
 fc::optional<fc::logging_config> load_logging_config_from_ini_file(const fc::path& config_ini_filename);
 
 int main(int argc, char** argv) {
+   /* 初始化map，plugin_factories_by_name */
    steemit::plugin::initialize_plugin_factories();
    app::application* node = new app::application();
    fc::oexception unhandled_exception;
@@ -81,7 +82,12 @@ int main(int argc, char** argv) {
 
       try
       {
-         bpo::options_description cli, cfg;
+    	  	 /**
+    	       * 这只app的默认cmd_line_options & cfg_file_options;
+    	       * 注意默认的public api： database_api login_api account_by_key_api
+    	       * 默认的plugins：witness account_history account_by_key
+    	       */
+    	     bpo::options_description cli, cfg;
          node->set_program_options(cli, cfg);
          app_options.add(cli);
          cfg_options.add(cfg);
@@ -172,13 +178,19 @@ int main(int argc, char** argv) {
       ilog("parsing options" );
       bpo::notify(options);
       ilog("initializing node");
+      // 设入成员变量data_dir & options
       node->initialize(data_dir, options);
       ilog("initializing plugins");
+      // 轮询配置中所有enable-plugin中的plugins，如果available，则加入到_plugin_enabled中，并调用该plugin的plugin_initialize函数。
       node->initialize_plugins( options );
 
       ilog("starting node");
+      // 做_chain_db的初始化和public_api的初始化，监听并加入p2p，必要时同步数据；最后构建+listen+accept websocket_server & websocket_tls_server;
+      // built in api： database_api login_api account_by_key_api
       node->startup();
       ilog("starting plugins");
+      // 对plugins_enabled中的plugins进行plugin_startup调用，
+      // default plugins：witness account_history account_by_key
       node->startup_plugins();
 
       fc::promise<int>::ptr exit_promise = new fc::promise<int>("UNIX Signal Handler");

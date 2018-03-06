@@ -22,9 +22,9 @@ enum witness_plugin_object_type
 
 enum bandwidth_type
 {
-   post,    ///< Rate limiting posting reward eligibility over time
-   forum,   ///< Rate limiting for all forum related actins
-   market   ///< Rate limiting for all other actions
+   post,    ///< Rate limiting posting reward eligibility over time: 随时间的推移来进行发帖奖励的限速
+   forum,   ///< Rate limiting for all forum related actions：所有论坛相关动作的限速
+   market   ///< Rate limiting for all other actions： 其他动作的限速
 };
 
 class account_bandwidth_object : public object< account_bandwidth_object_type, account_bandwidth_object >
