@@ -30,6 +30,9 @@ std::shared_ptr< steemit::plugin::block_info::block_info_plugin > block_info_api
    return app.get_plugin< block_info_plugin >( "block_info" );
 }
 
+/**
+ * 找到block_info plugin，然后从start_block_num 起最多获得count个block的信息，注意count不能大于10000。
+ */
 void block_info_api_impl::get_block_info( const get_block_info_args& args, std::vector< block_info >& result )
 {
    const std::vector< block_info >& _block_info = get_plugin()->_block_info;
@@ -42,6 +45,10 @@ void block_info_api_impl::get_block_info( const get_block_info_args& args, std::
    return;
 }
 
+/**
+ * 找到plugin block_info，将所需要的搜索范围内的block & info 组装到result中返回。
+ * 注意：为了控制返回结果的size，总的block size不能超过8M
+ */
 void block_info_api_impl::get_blocks_with_info( const get_block_info_args& args, std::vector< block_with_info >& result )
 {
    const std::vector< block_info >& _block_info = get_plugin()->_block_info;
@@ -66,6 +73,9 @@ void block_info_api_impl::get_blocks_with_info( const get_block_info_args& args,
 
 } // detail
 
+/**
+ * 对impl设入api_contxt，没有其他特殊操作
+ */
 block_info_api::block_info_api( const steemit::app::api_context& ctx )
 {
    my = std::make_shared< detail::block_info_api_impl >(ctx.app);

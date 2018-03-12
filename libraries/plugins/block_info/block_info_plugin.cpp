@@ -18,6 +18,11 @@ std::string block_info_plugin::plugin_name()const
    return "block_info";
 }
 
+/**
+ * plugin initialize：
+ * 1 将database的applied_block sig的插槽连接到此处的on_applied_block函数；
+ * 2 此处的on_applied_block会将block的相关信息保存到该插件的_block_info中。
+ */
 void block_info_plugin::plugin_initialize( const boost::program_options::variables_map& options )
 {
    chain::database& db = database();
@@ -25,6 +30,9 @@ void block_info_plugin::plugin_initialize( const boost::program_options::variabl
    _applied_block_conn  = db.applied_block.connect([this](const chain::signed_block& b){ on_applied_block(b); });
 }
 
+/**
+ * 注册block_info_api,提供获取block & info methods.
+ */
 void block_info_plugin::plugin_startup()
 {
    app().register_api_factory< block_info_api >( "block_info_api" );
@@ -34,6 +42,9 @@ void block_info_plugin::plugin_shutdown()
 {
 }
 
+/**
+ * 从signed_block 抽取block 信息植入_block_info(vector)对应位置的bock_info中。
+ */
 void block_info_plugin::on_applied_block( const chain::signed_block& b )
 {
    uint32_t block_num = b.block_num();

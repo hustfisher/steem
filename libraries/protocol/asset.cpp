@@ -37,6 +37,11 @@ namespace steemit { namespace protocol {
          return &a[1];
       }
 
+      /**
+       * 得到资产的精度，最小单位相当于一个代币分成N份，这样可以得到资产的最小值；
+       * 如 1.002 的精度是 1000，有15级精度，10的14次方，100万亿。
+       * 这样设计的目的：把double类型转换为int64_t类型，会精确；
+       */
       int64_t asset::precision()const
       {
          static int64_t table[] = {
@@ -50,10 +55,13 @@ namespace steemit { namespace protocol {
          return table[ d ];
       }
 
+      /**
+       * format: "整数部分.小数"" "$symbol_name
+       */
       string asset::to_string()const
       {
          int64_t prec = precision();
-         string result = fc::to_string(amount.value / prec);
+         string result = fc::to_string(amount.value / prec); //整数部分
          if( prec > 1 )
          {
             auto fract = amount.value % prec;
@@ -66,6 +74,9 @@ namespace steemit { namespace protocol {
          return result + " " + symbol_name();
       }
 
+      /**
+       * 从asset 的format string解析
+       */
       asset asset::from_string( const string& from )
       {
          try

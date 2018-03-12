@@ -251,6 +251,7 @@ namespace graphene { namespace net {
       node_delegate *_node_delegate;
       fc::thread *_thread;
 
+      /* 定义一个用于call调用的增量数据统计的结构 */
       typedef boost::accumulators::accumulator_set<int64_t, boost::accumulators::stats<boost::accumulators::tag::min,
                                                                                        boost::accumulators::tag::rolling_mean,
                                                                                        boost::accumulators::tag::max,
@@ -714,6 +715,9 @@ namespace graphene { namespace net {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * 如果定义P2P_IN_DEDICATED_THREAD，则在异步线程清理node_to_delete，否则直接清理。
+     */
     void node_impl_deleter::operator()(node_impl* impl_to_delete)
     {
 #ifdef P2P_IN_DEDICATED_THREAD
@@ -5341,6 +5345,9 @@ namespace graphene { namespace net {
     }
   }
 
+  /**
+   * 将msg 放入network中每一个node的消息队列，并维持其他node的连接状态。
+   */
   void simulated_network::broadcast( const message& item_to_broadcast  )
   {
     for (node_info* network_node_info : network_nodes)

@@ -42,9 +42,14 @@ namespace graphene { namespace net {
   {
     using namespace boost::multi_index;
 
+    /**
+     * peer_database_impl 中定义了一个多索引容器和peer database filename，其中多索引容器有2个索引标签，分别是potential_peer_record里的last_seen_time
+     * 和 endpoint，来检索potential_peer_record;
+     */
     class peer_database_impl
     {
     public:
+    	  /* 定义2个tag */
       struct last_seen_time_index {};
       struct endpoint_index {};
       typedef boost::multi_index_container<potential_peer_record, 
@@ -76,6 +81,9 @@ namespace graphene { namespace net {
       size_t size() const;
     };
 
+    /**
+     * 用于peer_database_impl的迭代访问
+     */
     class peer_database_iterator_impl
     {
     public:
@@ -88,6 +96,9 @@ namespace graphene { namespace net {
     peer_database_iterator::peer_database_iterator( const peer_database_iterator& c ) :
       boost::iterator_facade<peer_database_iterator, const potential_peer_record, boost::forward_traversal_tag>(c){}
 
+    /**
+     * 打开_peer_database_filename，构建potential_peer_record的vector并插入_potential_peer_set，然后只保留前1000个元素。
+     */
     void peer_database_impl::open(const fc::path& peer_database_filename)
     {
       _peer_database_filename = peer_database_filename;
@@ -114,6 +125,12 @@ namespace graphene { namespace net {
       }
     }
 
+    /**
+     * 关闭流程：
+     * 1 将_potential_peer_set 拷贝到perr_records;
+     * 2 将所有perr_records 以json格式保存到 peer database filename；
+     * 3 将_potential_peer_set进行清理；
+     */
     void peer_database_impl::close()
     {
       std::vector<potential_peer_record> peer_records;
@@ -135,11 +152,17 @@ namespace graphene { namespace net {
       _potential_peer_set.clear();
     }
 
+    /**
+     * 直接对_potential_peer_set 进行clear
+     */
     void peer_database_impl::clear()
     {
       _potential_peer_set.clear();
     }
 
+    /**
+     * 根据endpoint清理一条记录
+     */
     void peer_database_impl::erase(const fc::ip::endpoint& endpointToErase)
     {
       auto iter = _potential_peer_set.get<endpoint_index>().find(endpointToErase);
@@ -147,6 +170,9 @@ namespace graphene { namespace net {
         _potential_peer_set.get<endpoint_index>().erase(iter);
     }
 
+    /**
+     * 更新or插入一个新的record
+     */
     void peer_database_impl::update_entry(const potential_peer_record& updatedRecord)
     {
       auto iter = _potential_peer_set.get<endpoint_index>().find(updatedRecord.endpoint);
@@ -156,6 +182,9 @@ namespace graphene { namespace net {
         _potential_peer_set.get<endpoint_index>().insert(updatedRecord);
     }
 
+    /**
+     * 如果endpoint存在，则返回，否则构建一个新的record
+     */
     potential_peer_record peer_database_impl::lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup)
     {
       auto iter = _potential_peer_set.get<endpoint_index>().find(endpointToLookup);
@@ -164,6 +193,9 @@ namespace graphene { namespace net {
       return potential_peer_record(endpointToLookup);
     }
 
+    /**
+     * 查到就返回，佛则返回一个optionnal（null对象）
+     */
     fc::optional<potential_peer_record> peer_database_impl::lookup_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup)
     {
       auto iter = _potential_peer_set.get<endpoint_index>().find(endpointToLookup);
@@ -225,11 +257,20 @@ namespace graphene { namespace net {
   peer_database::~peer_database()
   {}
 
+  /**
+   * 打开_peer_database_filename，构建potential_peer_record的vector并插入_potential_peer_set，然后只保留前1000个元素。
+   */
   void peer_database::open(const fc::path& databaseFilename)
   {
     my->open(databaseFilename);
   }
 
+  /**
+   * 关闭流程：
+   * 1 将_potential_peer_set 拷贝到perr_records;
+   * 2 将所有perr_records 以json格式保存到 peer database filename；
+   * 3 将_potential_peer_set进行清理；
+   */
   void peer_database::close()
   {
     my->close();

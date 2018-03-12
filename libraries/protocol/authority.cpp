@@ -42,7 +42,11 @@ void authority::validate()const
    }
 }
 
-
+/**
+ * account name规则：
+ * account name的lenght要在[3,16)之间；
+ * 如果有"."，"."之前或之间的字符串长度要大于等于3，且必须为小写字母开始，后面跟数字或-；
+ */
 bool is_valid_account_name( const string& name )
 {
 #if STEEMIT_MIN_ACCOUNT_NAME_LENGTH < 3

@@ -14,6 +14,8 @@ namespace steemit { namespace chain {
     *  The purpose of this class is to represent an authority object in a manner compatiable with
     *  shared memory storage.  This requires all dynamic fields to be allocated with the same allocator
     *  that allocated the shared_authority.
+    *  这个类用于以与共享内存兼容的方式表示权限对象，所以要求所有的动态字段都使用分配shared_authority的那个分配器。
+    *  方法
     */
    struct shared_authority
    {
@@ -22,6 +24,9 @@ namespace steemit { namespace chain {
 
       public:
 
+      /**
+       * 使用alloc分配空间，并将authority中的account_auths、 key_auths、weight_threshold 设到shared_authority
+       */
       template< typename Allocator >
       shared_authority( const authority& a, const Allocator& alloc ) :
          account_auths( account_pair_allocator_type( alloc.get_segment_manager() ) ),

@@ -34,6 +34,11 @@ raw_block_api::raw_block_api( const steemit::app::api_context& ctx )
    my = std::make_shared< detail::raw_block_api_impl >(ctx.app);
 }
 
+/**
+ * 1 根据block_num拿到block;
+ * 2 pack出block的内容，进行base64编码后放入raw_block.
+ * 3 同时设置result中其他参数。
+ */
 get_raw_block_result raw_block_api::get_raw_block( get_raw_block_args args )
 {
    get_raw_block_result result;
@@ -53,6 +58,11 @@ get_raw_block_result raw_block_api::get_raw_block( get_raw_block_args args )
    return result;
 }
 
+/**
+ * 1 对block_b64 进行base64解码；
+ * 2 unpack到block；
+ * 3 push到database中。
+ */
 void raw_block_api::push_raw_block( std::string block_b64 )
 {
    std::shared_ptr< steemit::chain::database > db = my->app.chain_database();

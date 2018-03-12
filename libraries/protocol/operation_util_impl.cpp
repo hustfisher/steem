@@ -2,6 +2,9 @@
 
 namespace fc {
 
+/**
+ * 获得最后一个"："和"_"之间的string作为name
+ */
 std::string name_from_type( const std::string& type_name )
 {
    auto start = type_name.find_last_of( ':' ) + 1;

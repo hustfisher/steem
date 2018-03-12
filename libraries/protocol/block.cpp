@@ -14,6 +14,12 @@ namespace steemit { namespace protocol {
       return fc::endian_reverse_u32(id._hash[0]);
    }
 
+   /**
+    * 计算block id的算法：
+    * 1 用本singed block header的内容计算出hash；
+    * 2 将该hash的第一个字节设为本block的block num；
+    * 3 将hashcpy到block_id_type后返回。
+    */
    block_id_type signed_block_header::id()const
    {
       auto tmp = fc::sha224::hash( *this );
@@ -24,21 +30,33 @@ namespace steemit { namespace protocol {
       return result;
    }
 
+   /**
+    * 根据witness_signature和digest构建public_key
+    */
    fc::ecc::public_key signed_block_header::signee()const
    {
       return fc::ecc::public_key( witness_signature, digest(), true/*enforce canonical*/ );
    }
 
+   /**
+    * 根据signer 的private key 构建witness_signature
+    */
    void signed_block_header::sign( const fc::ecc::private_key& signer )
    {
       witness_signature = signer.sign_compact( digest() );
    }
 
+   /**
+    * signee需要和构建出来的public key相同
+    */
    bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee )const
    {
       return signee() == expected_signee;
    }
 
+   /**
+    * 对signed block中所有的trasaction进行merkle digest，然后计算merkle root值。
+    */
    checksum_type signed_block::calculate_merkle_root()const
    {
       if( transactions.size() == 0 )

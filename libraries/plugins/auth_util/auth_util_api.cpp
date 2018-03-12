@@ -38,6 +38,9 @@ std::shared_ptr< steemit::plugin::auth_util::auth_util_plugin > auth_util_api_im
    return app.get_plugin< auth_util_plugin >( "auth_util" );
 }
 
+/**
+ * 根据出入的authority signature param 构建authority，然后通过sign_state进行验证
+ */
 void auth_util_api_impl::check_authority_signature( const check_authority_signature_params& args, check_authority_signature_result& result )
 {
    std::shared_ptr< chain::database > db = app.chain_database();
@@ -87,6 +90,9 @@ auth_util_api::auth_util_api( const steemit::app::api_context& ctx )
 
 void auth_util_api::on_api_startup() { }
 
+/**
+ * 根据出入的authority signature param 构建authority，然后通过sign_state进行验证
+ */
 check_authority_signature_result auth_util_api::check_authority_signature( check_authority_signature_params args )
 {
    check_authority_signature_result result;

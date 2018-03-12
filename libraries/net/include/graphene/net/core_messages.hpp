@@ -45,7 +45,13 @@ namespace graphene { namespace net {
   using steemit::protocol::transaction_id_type;
   using steemit::protocol::signed_block;
 
-  typedef fc::ecc::public_key_data node_id_t;
+  /**
+   * 1 椭圆加密算法（ECC）是一种公钥加密体制,最初由Koblitz和Miller两人于1985年提出，其数学基础是利用椭圆曲线上的
+   *   有理点构成Abel加法群上椭圆离散对数的计算困难性。
+   * 2 RIPEMD（RACE Integrity Primitives Evaluation Message Digest，RACE原始完整性校验消息摘要），是Hans Dobbertin等3人
+   *   在md4,md5的基础上，于1996年提出来的。算法共有4个标准128、160、256和320，其对应输出长度分别为16字节、20字节、32字节和40字节。
+   */
+  typedef fc::ecc::public_key_data node_id_t; //
   typedef fc::ripemd160 item_hash_t;
   struct item_id
   {

@@ -58,6 +58,7 @@ namespace graphene { namespace net {
    /**
     *  @class node_delegate
     *  @brief used by node reports status to client or fetch data from client
+    *  处理新transacton、block，获取各种block相关信息。
     */
    class node_delegate
    {
@@ -296,6 +297,9 @@ namespace graphene { namespace net {
         std::unique_ptr<detail::node_impl, detail::node_impl_deleter> my;
    };
 
+   /**
+    *  管理了一组node作为一个network，进行listen、connect、sync，同时进行broadcast等操作。
+    */
     class simulated_network : public node
     {
     public:

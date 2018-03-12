@@ -19,6 +19,11 @@ void auth_util_plugin::plugin_initialize( const boost::program_options::variable
 {
 }
 
+/**
+ * plugin startup时注册auth_util_api.
+ * auth_util_api主要提供check_authority_signature功能，其根据出入的authority signature param 构建authority，然后通过sign_state进行验证
+ *
+ */
 void auth_util_plugin::plugin_startup()
 {
    app().register_api_factory< auth_util_api >( "auth_util_api" );

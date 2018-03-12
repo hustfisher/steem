@@ -4,7 +4,7 @@
 #pragma once
 
 #define STEEMIT_BLOCKCHAIN_VERSION              ( version(0, 19, 3) )
-#define STEEMIT_BLOCKCHAIN_HARDFORK_VERSION     ( hardfork_version( STEEMIT_BLOCKCHAIN_VERSION ) )
+#define STEEMIT_BLOCKCHAIN_HARDFORK_VERSION     ( hardfork_version( STEEMIT_BLOCKCHAIN_VERSION ) ) // version的高两个字节，对应上面即0，19
 
 #ifdef IS_TEST_NET
 #define STEEMIT_INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))

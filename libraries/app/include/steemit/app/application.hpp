@@ -73,6 +73,9 @@ namespace steemit { namespace app {
          void enable_plugin( const std::string& name );
          std::shared_ptr<abstract_plugin> get_plugin( const string& name )const;
 
+         /**
+          * 从_plugins_enabled中根据name找到对应的plugin，注意此plugin必须存在。
+          */
          template<typename PluginType>
          std::shared_ptr<PluginType> get_plugin( const string& name ) const
          {

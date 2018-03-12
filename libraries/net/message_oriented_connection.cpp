@@ -116,6 +116,9 @@ namespace graphene { namespace net {
       return _sock.get_socket();
     }
 
+    /**
+     * 首先和对方sock进行key交换，然后构建一个异步线程，进行read_loop,循环读取msg，并处理.
+     */
     void message_oriented_connection_impl::accept()
     {
       VERIFY_CORRECT_THREAD();
@@ -124,6 +127,10 @@ namespace graphene { namespace net {
       _read_loop_done = fc::async([=](){ read_loop(); }, "message read_loop");
     }
 
+    /**
+     * 1 连接到对方，并进行key 协商；
+     * 2 构建异步处理循环，读取msg，并调用delegate进行处理.
+     */
     void message_oriented_connection_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
     {
       VERIFY_CORRECT_THREAD();
@@ -138,6 +145,13 @@ namespace graphene { namespace net {
       _sock.bind(local_endpoint);
     }
 
+    /**
+     * 1 循环持续读取message，读取时，先读16bytes，解析出msg header；
+     * 2 然后继续读取msg的剩余data；
+     * 3 调用_delegate的on_message函数，进行真正数据处理。
+     * 4 处理完毕后，继续读取，如果没有消息，就在read处阻塞。
+     * 5 如果遇到任何异常，就close 该connection。
+     */
     void message_oriented_connection_impl::read_loop()
     {
       VERIFY_CORRECT_THREAD();
@@ -226,6 +240,9 @@ namespace graphene { namespace net {
         throw *exception_to_rethrow;
     }
 
+    /**
+     * 构建msg，包含paddingspace，然后发出网络
+     */
     void message_oriented_connection_impl::send_message(const message& message_to_send)
     {
       VERIFY_CORRECT_THREAD();
@@ -356,16 +373,26 @@ namespace graphene { namespace net {
     return my->get_socket();
   }
 
+  /**
+   * 首先和对方sock进行key交换，然后构建一个异步线程，进行read_loop,循环读取msg，并处理.
+   */
   void message_oriented_connection::accept()
   {
     my->accept();
   }
 
+  /**
+   * 1 连接到对方，并进行key 协商；
+   * 2 构建异步处理循环，读取msg，并调用delegate进行处理.
+   */
   void message_oriented_connection::connect_to(const fc::ip::endpoint& remote_endpoint)
   {
     my->connect_to(remote_endpoint);
   }
 
+  /**
+   * 调用sock的bind
+   */
   void message_oriented_connection::bind(const fc::ip::endpoint& local_endpoint)
   {
     my->bind(local_endpoint);

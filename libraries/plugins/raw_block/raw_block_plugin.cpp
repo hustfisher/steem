@@ -19,6 +19,10 @@ void raw_block_plugin::plugin_initialize( const boost::program_options::variable
 {
 }
 
+/**
+ * 注册了raw_block_api，该api主要提供：get/push raw_block。
+ * raw_block: block pack后的string，然后进行base64编码。
+ */
 void raw_block_plugin::plugin_startup()
 {
    app().register_api_factory< raw_block_api >( "raw_block_api" );

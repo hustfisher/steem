@@ -72,6 +72,9 @@ namespace graphene { namespace net {
         size     = (uint32_t)data.size();
      }
 
+     /**
+      * msg id: 对msg 的data进行ripemd160 hash.
+      */
      fc::uint160_t id()const
      {
         return fc::ripemd160::hash( data.data(), (uint32_t)data.size() );
@@ -89,6 +92,7 @@ namespace graphene { namespace net {
           T tmp;
           if( data.size() )
           {
+        	  	 /* 将data转换为T */
              fc::datastream<const char*> ds( data.data(), data.size() );
              fc::raw::unpack( ds, tmp );
           }

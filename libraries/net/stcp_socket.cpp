@@ -48,6 +48,13 @@ stcp_socket::~stcp_socket()
 {
 }
 
+/**
+ * key exchange 流程：
+ * 1 构建本地私钥，并构建配对的公钥；
+ * 2 将公钥write到对方，并从对方收到一个对方的公钥；
+ * 3 用对方的公钥初始化_send_aes和_recv_aes；
+ * 4 完成协商；
+ */
 void stcp_socket::do_key_exchange()
 {
   _priv_key = fc::ecc::private_key::generate();
@@ -68,7 +75,9 @@ void stcp_socket::do_key_exchange()
                   fc::city_hash_crc_128((char*)&_shared_secret,sizeof(_shared_secret) ) );
 }
 
-
+/**
+ * 连到对方，并完成public key交换.
+ */
 void stcp_socket::connect_to( const fc::ip::endpoint& remote_endpoint )
 {
   _sock.connect_to( remote_endpoint );
@@ -84,6 +93,7 @@ void stcp_socket::bind( const fc::ip::endpoint& local_endpoint )
  *   This method must read at least 16 bytes at a time from
  *   the underlying TCP socket so that it can decrypt them. It
  *   will buffer any left-over.
+ *   从sock中读取16*N（N>=1）个字节，解码后返回
  */
 size_t stcp_socket::readsome( char* buffer, size_t len )
 { try {
@@ -116,6 +126,9 @@ size_t stcp_socket::readsome( char* buffer, size_t len )
     return s;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("len",len) ) }
 
+/**
+ * 从sock中读取16*N个bytes，写入buf时带offset
+ */
 size_t stcp_socket::readsome( const std::shared_ptr<char>& buf, size_t len, size_t offset ) 
 {
   return readsome(buf.get() + offset, len);
@@ -126,6 +139,13 @@ bool stcp_socket::eof()const
   return _sock.eof();
 }
 
+/**
+ * precondition：len需要是大于0的16个倍数；
+ * 写流程：
+ * 1 一次最多写4k，然后将msg进行ecode；
+ * 2 write，直到全部写出；
+ * 3 返回写出的密文长度；
+ */
 size_t stcp_socket::writesome( const char* buffer, size_t len )
 { try {
     assert( len > 0 && (len % 16) == 0 );
@@ -158,6 +178,9 @@ size_t stcp_socket::writesome( const char* buffer, size_t len )
     return ciphertext_len;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("len",len) ) }
 
+/**
+ * 从buf的offset位置开始写.
+ */
 size_t stcp_socket::writesome( const std::shared_ptr<const char>& buf, size_t len, size_t offset )
 {
   return writesome(buf.get() + offset, len);
@@ -177,6 +200,9 @@ void stcp_socket::close()
   }FC_RETHROW_EXCEPTIONS( warn, "error closing stcp socket" );
 }
 
+/**
+ * 通过交互完成公钥交换。
+ */
 void stcp_socket::accept()
 {
   do_key_exchange();
